@@ -1,26 +1,26 @@
-const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
+
+// Prefer lấy từ env, fallback theo request (không khuyến khích để lâu dài)
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+
+sgMail.setApiKey(SENDGRID_API_KEY);
 
 const sendEmail = async (to, subject, text) => {
-  // Tạo transporter với SMTP Gmail
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: false, // true nếu port = 465
-    auth: {
-      user: process.env.SMTP_EMAIL,
-      pass: process.env.SMTP_PASSWORD,
-    },
-  });
+  const fromEmail = process.env.FROM_EMAIL;
+  const fromName = process.env.FROM_NAME;
+
+  if (!fromEmail) {
+    throw new Error("FROM_EMAIL chưa được cấu hình");
+  }
 
   const message = {
-    from: `"${process.env.FROM_NAME}" <${process.env.FROM_EMAIL}>`,
     to,
+    from: fromName ? { email: fromEmail, name: fromName } : fromEmail,
     subject,
     text,
   };
 
-  // Gửi email
-  await transporter.sendMail(message);
+  await sgMail.send(message);
 };
 
 module.exports = sendEmail;
