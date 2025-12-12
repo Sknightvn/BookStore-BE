@@ -1,0 +1,41 @@
+# Backend specific
+
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Uploads & temp files
+uploads/*
+!uploads/.gitkeep
+temp/
+tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Build files
+dist/
+build/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Debug
+.env.test
