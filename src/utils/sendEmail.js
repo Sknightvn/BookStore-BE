@@ -16,12 +16,20 @@ const sendEmail = async (to, subject, text) => {
 
   const from = fromName ? `${fromName} <${fromEmail}>` : fromEmail;
 
-  await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from,
     to,
     subject,
     text,
   });
+
+  if (error) {
+    // Log chi tiết để debug khi gửi thất bại
+    console.error("Send email failed:", error);
+    throw new Error(`Gửi email thất bại: ${error.message || "unknown error"}`);
+  }
+
+  return data;
 };
 
 module.exports = sendEmail;
