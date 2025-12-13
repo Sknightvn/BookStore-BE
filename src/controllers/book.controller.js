@@ -39,11 +39,11 @@ exports.createBook = async (req, res) => {
 
     res.status(201).json({ success: true, data: newBook });
   } catch (error) {
-    // ⚠️ Bắt lỗi trùng ISSN
+    // ⚠️ Bắt lỗi trùng ISBN
     if (error.code === 11000 && error.keyPattern?.ISSN) {
       return res.status(400).json({
         success: false,
-        message: `Mã ISSN "${error.keyValue.ISSN}" đã tồn tại, vui lòng nhập mã khác.`,
+        message: `Mã ISBN "${error.keyValue.ISSN}" đã tồn tại, vui lòng nhập mã khác.`,
       });
     }
 
