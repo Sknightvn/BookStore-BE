@@ -1,6 +1,6 @@
 require("dotenv").config();
 const Order = require("../models/order.model")
-const Book = require("../models/book.model") 
+const Book = require("../models/book.model")
 const querystring = require("qs");
 const crypto = require("crypto");
 const qs = require("qs");
@@ -21,9 +21,9 @@ exports.createOrder = async (req, res) => {
       tax,
       total,
       paymentMethod
-   
+
     } = req.body
-    console.log("📦 Dữ liệu nhận từ FE:", req.body) 
+    console.log("📦 Dữ liệu nhận từ FE:", req.body)
 
     // Validate
     if (!items || !items.length) {
@@ -40,7 +40,7 @@ exports.createOrder = async (req, res) => {
       price: item.price,
       quantity: item.quantity,
       total: item.price * item.quantity,
-     image: item.image || Book?.coverImage || null, 
+      image: item.image || Book?.coverImage || null,
     }))
 
     // Tạo đơn hàng
@@ -54,7 +54,7 @@ exports.createOrder = async (req, res) => {
       tax,
       total,
       paymentMethod,
-     
+
     })
 
     // 🔥 Trừ stock của từng sách
@@ -84,9 +84,9 @@ exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find({
       isDeleted: false,
-      status: { $ne: "huydonhang" }, 
+      status: { $ne: "huydonhang" },
       $nor: [
-        { status: "pending", paymentMethod: { $in: ["bank_transfer", "vnpay"] } }
+        { status: "pending", paymentMethod: "vnpay" }
       ]
     }).sort({ createdAt: -1 });
 
@@ -102,7 +102,7 @@ exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
     if (!order) return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng!" })
-      
+
     res.status(200).json({ success: true, order })
   } catch (error) {
     res.status(500).json({ success: false, message: error.message })
@@ -134,13 +134,13 @@ exports.getOrdersByUser = async (req, res) => {
 
 
     const orders = await Order.find({
-  user: userId,
-  isDeleted: false,
-  $nor: [
-    { status: "pending", paymentMethod: { $in: ["bank_transfer", "vnpay"] } }
-  ]
-}).sort({ createdAt: -1});
-  
+      user: userId,
+      isDeleted: false,
+      $nor: [
+        { status: "pending", paymentMethod: "vnpay" }
+      ]
+    }).sort({ createdAt: -1 });
+
 
 
     res.status(200).json({
@@ -156,10 +156,10 @@ exports.getOrdersByUser = async (req, res) => {
 exports.getOrderByCode = async (req, res) => {
   try {
     // const { orderCode } = req.body;
-     const { orderCode } = req.params;
-     
+    const { orderCode } = req.params;
+
     // const order = await Order.findOne({ orderCode, isDeleted: false });
-     const order = await Order.findOne({ orderCode, isDeleted: false });
+    const order = await Order.findOne({ orderCode, isDeleted: false });
 
     if (!order) {
       return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng!" });
@@ -174,7 +174,7 @@ exports.getOrderByCode = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.body; 
+    const { userId } = req.body;
 
     const statusFlow = [
       "pending",
@@ -295,12 +295,12 @@ exports.rejectOrder = async (req, res) => {
     }
 
     const userName = user.name || user.email || "Unknown User";
-  
-// Hoàn lại số lượng vào kho
+
+    // Hoàn lại số lượng vào kho
     for (const item of order.items) {
       const book = await bookModel.findById(item.productId);
       if (book) {
-        book.stock += item.quantity;  
+        book.stock += item.quantity;
         await book.save();
       }
     }
@@ -380,12 +380,12 @@ exports.cancelOrder = async (req, res) => {
     }
 
     const userName = user.name || user.email || "Unknown User";
-  
-// Hoàn lại số lượng vào kho
+
+    // Hoàn lại số lượng vào kho
     for (const item of order.items) {
       const book = await bookModel.findById(item.productId);
       if (book) {
-        book.stock += item.quantity;  
+        book.stock += item.quantity;
         await book.save();
       }
     }
@@ -475,7 +475,7 @@ exports.createOrderAndVNPayUrl = async (req, res) => {
     });
 
     await newOrder.save();
- 
+
     // ✅ Nếu thanh toán VNPay hoặc chuyển khoản
     if (paymentMethod === "vnpay" || paymentMethod === "bank_transfer") {
       const tmnCode = process.env.VNP_TMNCODE;
@@ -566,7 +566,7 @@ exports.vnpayIpn = async (req, res) => {
       if (!order) {
         return res.status(200).json({ RspCode: "01", Message: "Order not found" });
       }
-   // 🔒 Ngăn trừ kho 2 lần
+      // 🔒 Ngăn trừ kho 2 lần
       if (order.status === "processing") {
         return res.status(200).json({ RspCode: "00", Message: "Already processed" });
       }
