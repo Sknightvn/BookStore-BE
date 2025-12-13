@@ -1,8 +1,7 @@
 const { Resend } = require("resend");
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const resend = new Resend(RESEND_API_KEY);
 
 const sendEmail = async (to, subject, text) => {
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const fromEmail = process.env.FROM_EMAIL;
   const fromName = process.env.FROM_NAME;
 
@@ -14,6 +13,8 @@ const sendEmail = async (to, subject, text) => {
     throw new Error("FROM_EMAIL chưa được cấu hình");
   }
 
+  // Khởi tạo Resend chỉ khi cần thiết và sau khi đã kiểm tra API key
+  const resend = new Resend(RESEND_API_KEY);
   const from = fromName ? `${fromName} <${fromEmail}>` : fromEmail;
 
   const { data, error } = await resend.emails.send({
