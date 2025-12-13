@@ -45,7 +45,39 @@ const UserSchema = new mongoose.Schema(
       type : String,
       default: "false",
       enum: ["true", "false"],
-    }
+    },
+    productsCart: [
+      {
+        product: {
+          id: {
+            type: String,
+            required: true,
+          },
+          title: {
+            type: String,
+            required: true,
+          },
+          price: {
+            type: Number,
+            required: true,
+          },
+          coverImage: {
+            type: String,
+            required: false,
+          },
+          volume: {
+            type: String,
+            required: false,
+          },
+        },
+        quantity: {
+          type: Number,
+          required: true,
+          default: 1,
+          min: 1,
+        },
+      },
+    ],
   },
   {
     toJSON: { virtuals: true },

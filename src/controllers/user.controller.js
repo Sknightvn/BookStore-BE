@@ -73,3 +73,121 @@ exports.deleteUser = asyncHandler(async (req, res, next) => {
     data: {},
   })
 })
+
+// @desc    Tạo productsCart cho User
+// @route   POST /api/users/cart
+// @access  Private
+exports.createCart = asyncHandler(async (req, res, next) => {
+  const { userId, email, productsCart } = req.body
+
+  // Tìm user theo userId hoặc email
+  let user
+  if (userId) {
+    user = await User.findById(userId)
+  } else if (email) {
+    user = await User.findOne({ email })
+  } else {
+    return next(new ErrorResponse("Vui lòng cung cấp userId hoặc email", 400))
+  }
+
+  if (!user) {
+    return next(new ErrorResponse("Không tìm thấy người dùng", 404))
+  }
+
+  // Kiểm tra productsCart có đúng format không
+  if (!Array.isArray(productsCart)) {
+    return next(new ErrorResponse("productsCart phải là một mảng", 400))
+  }
+
+  // Validate từng item trong cart
+  for (const item of productsCart) {
+    if (!item.product || !item.product.id || !item.product.title || !item.product.price) {
+      return next(new ErrorResponse("Mỗi item trong cart phải có product với id, title, price", 400))
+    }
+    if (!item.quantity || item.quantity < 1) {
+      return next(new ErrorResponse("Quantity phải lớn hơn 0", 400))
+    }
+  }
+
+  // Gán productsCart cho user
+  user.productsCart = productsCart
+  await user.save()
+
+  res.status(201).json({
+    success: true,
+    data: user.productsCart,
+  })
+})
+
+// @desc    Cập nhật productsCart của User
+// @route   PUT /api/users/cart
+// @access  Private
+exports.updateCart = asyncHandler(async (req, res, next) => {
+  const { userId, email, productsCart } = req.body
+
+  // Tìm user theo userId hoặc email
+  let user
+  if (userId) {
+    user = await User.findById(userId)
+  } else if (email) {
+    user = await User.findOne({ email })
+  } else {
+    return next(new ErrorResponse("Vui lòng cung cấp userId hoặc email", 400))
+  }
+
+  if (!user) {
+    return next(new ErrorResponse("Không tìm thấy người dùng", 404))
+  }
+
+  // Kiểm tra productsCart có đúng format không
+  if (!Array.isArray(productsCart)) {
+    return next(new ErrorResponse("productsCart phải là một mảng", 400))
+  }
+
+  // Validate từng item trong cart
+  for (const item of productsCart) {
+    if (!item.product || !item.product.id || !item.product.title || !item.product.price) {
+      return next(new ErrorResponse("Mỗi item trong cart phải có product với id, title, price", 400))
+    }
+    if (!item.quantity || item.quantity < 1) {
+      return next(new ErrorResponse("Quantity phải lớn hơn 0", 400))
+    }
+  }
+
+  // Cập nhật productsCart
+  user.productsCart = productsCart
+  await user.save()
+
+  res.status(200).json({
+    success: true,
+    data: user.productsCart,
+  })
+})
+
+// @desc    Lấy productsCart theo user-id hoặc email
+// @route   GET /api/users/cart
+// @access  Private
+exports.getCart = asyncHandler(async (req, res, next) => {
+  // Hỗ trợ cả query params và body (để tương thích với payload)
+  const userId = req.query.userId || req.body.userId
+  const email = req.query.email || req.body.email
+
+  // Tìm user theo userId hoặc email
+  let user
+  if (userId) {
+    user = await User.findById(userId)
+  } else if (email) {
+    user = await User.findOne({ email })
+  } else {
+    return next(new ErrorResponse("Vui lòng cung cấp userId hoặc email", 400))
+  }
+
+  if (!user) {
+    return next(new ErrorResponse("Không tìm thấy người dùng", 404))
+  }
+
+  res.status(200).json({
+    success: true,
+    data: user.productsCart || [],
+  })
+})
