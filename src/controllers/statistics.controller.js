@@ -147,8 +147,8 @@ exports.getTopProducts = async (req, res) => {
 
     if (!orders.length) {
       return res.status(200).json({
-        message: "Không có đơn hàng nào",
-        topProducts: [],
+        success: true,
+        data: [],
       });
     }
 
@@ -188,7 +188,8 @@ exports.getTopProducts = async (req, res) => {
 
     // ✅ Trả dữ liệu về frontend
     res.status(200).json({
-      topProducts,
+      success: true,
+      data: topProducts,
     });
   } catch (error) {
     console.error("Lỗi khi lấy sản phẩm bán chạy:", error);
