@@ -24,6 +24,7 @@ const paymentRoutes = require("./src/routes/paymentRoutes");
 const statisticsRoutes = require("./src/routes/statistics.router");
 const TransactionBookRoutes = require("./src/routes/transactionBook.routes")
 const returnRoutes = require("./src/routes/returnRoutes")
+const chatbotRoutes = require("./src/routes/chatbot.routes")
 // Cấu hình dotenv
 dotenv.config()
 
@@ -140,6 +141,7 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/statistics", statisticsRoutes);
 app.use("/api/transactionBook",TransactionBookRoutes)
 app.use("/api/returns", returnRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
 // Route mặc định
 app.get("/", (req, res) => res.send("API is running"))
