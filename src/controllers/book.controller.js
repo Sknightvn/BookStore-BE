@@ -53,9 +53,30 @@ exports.createBook = async (req, res) => {
 
 exports.getBooks = async (req, res) => {
   try {
-
-    const books = await Book.find({ isDelete: "false" }).populate("category", "name");
-    res.status(200).json({ success: true, data: books });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 9;
+    
+    const skip = (page - 1) * limit;
+    
+    const total = await Book.countDocuments({ isDelete: false });
+    
+    const totalPages = Math.ceil(total / limit);
+    
+    const books = await Book.find({ isDelete: false })
+      .populate("category", "name")
+      .skip(skip)
+      .limit(limit);
+    
+    res.status(200).json({ 
+      success: true, 
+      data: books,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages
+      }
+    });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
