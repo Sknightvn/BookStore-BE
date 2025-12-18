@@ -125,7 +125,6 @@ exports.createCart = asyncHandler(async (req, res, next) => {
 exports.updateCart = asyncHandler(async (req, res, next) => {
   const { userId, email, productsCart } = req.body
 
-  // Tìm user theo userId hoặc email
   let user
   if (userId) {
     user = await User.findById(userId)
@@ -139,25 +138,24 @@ exports.updateCart = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse("Không tìm thấy người dùng", 404))
   }
 
-  // Kiểm tra productsCart có đúng format không
-  if (!Array.isArray(productsCart)) {
-    return next(new ErrorResponse("productsCart phải là một mảng", 400))
+  // Kiểm tra productsCart có đúng format không (cho phép undefined/null -> set thành [])
+  const cartToUpdate = Array.isArray(productsCart) ? productsCart : []
+
+  // Validate từng item trong cart (chỉ khi có items)
+  if (cartToUpdate.length > 0) {
+    for (const item of cartToUpdate) {
+      if (!item.product || !item.product.id || !item.product.title || !item.product.price) {
+        return next(new ErrorResponse("Mỗi item trong cart phải có product với id, title, price", 400))
+      }
+      if (!item.quantity || item.quantity < 1) {
+        return next(new ErrorResponse("Quantity phải lớn hơn 0", 400))
+      }
+    }
   }
 
-  // Validate từng item trong cart
-  for (const item of productsCart) {
-    if (!item.product || !item.product.id || !item.product.title || !item.product.price) {
-      return next(new ErrorResponse("Mỗi item trong cart phải có product với id, title, price", 400))
-    }
-    if (!item.quantity || item.quantity < 1) {
-      return next(new ErrorResponse("Quantity phải lớn hơn 0", 400))
-    }
-  }
-
-  // Cập nhật productsCart
-  user.productsCart = productsCart
+  // Cập nhật productsCart - luôn update kể cả mảng rỗng
+  user.productsCart = cartToUpdate
   await user.save()
-
   res.status(200).json({
     success: true,
     data: user.productsCart,
