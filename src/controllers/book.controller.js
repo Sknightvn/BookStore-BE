@@ -1,6 +1,9 @@
 const Book = require("../models/book.model");
 const Category = require("../models/category.model");
+const Customer = require("../models/customer.model");
 const cloudinary = require("../config/cloudinary");
+const asyncHandler = require("../middleware/async.middleware");
+const ErrorResponse = require("../utils/errorResponse");
 
 exports.createBook = async (req, res) => {
   try {
@@ -58,10 +61,12 @@ exports.getBooks = async (req, res) => {
     
     const skip = (page - 1) * limit;
     
+    // Lấy tất cả sách chưa bị xóa, bao gồm cả sách có stock === 0
     const total = await Book.countDocuments({ isDelete: false });
     
     const totalPages = Math.ceil(total / limit);
     
+    // Trả về tất cả sách (bao gồm stock === 0), chỉ lọc theo isDelete
     const books = await Book.find({ isDelete: false })
       .populate("category", "name")
       .skip(skip)
@@ -88,7 +93,8 @@ exports.getBookById = async (req, res) => {
 
     // 🔎 Tìm sách theo ID, chỉ lấy sách chưa bị xóa
     const book = await Book.findOne({ _id: id, isDelete: false })
-      .populate("category", "name");
+      .populate("category", "name")
+      .populate("reviews.customer", "fullName email");
 
     if (!book) {
       return res.status(404).json({
@@ -188,3 +194,74 @@ console.log(req.file);
     });
   }
 };
+
+// ======================
+// THÊM ĐÁNH GIÁ VÀ RATING CHO SÁCH
+// ======================
+exports.addReview = asyncHandler(async (req, res, next) => {
+  const { bookId } = req.params;
+  const { rating, review } = req.body;
+
+  // Kiểm tra rating bắt buộc
+  if (!rating && rating !== 0) {
+    return next(new ErrorResponse("Vui lòng chọn số sao đánh giá", 400));
+  }
+
+  // Chuyển đổi rating sang số
+  const ratingNumber = Number(rating);
+
+  // Kiểm tra rating hợp lệ (1-5 và là số nguyên)
+  if (isNaN(ratingNumber) || ratingNumber < 1 || ratingNumber > 5 || !Number.isInteger(ratingNumber)) {
+    return next(new ErrorResponse("Số sao phải là số nguyên từ 1 đến 5", 400));
+  }
+
+  // Kiểm tra sách tồn tại
+  const book = await Book.findOne({ _id: bookId, isDelete: false });
+  if (!book) {
+    return next(new ErrorResponse("Không tìm thấy sách hoặc sách đã bị xóa", 404));
+  }
+
+  // Lấy customer từ user (req.user được set từ auth middleware)
+  const customer = await Customer.findOne({ user: req.user._id, isActive: true });
+  if (!customer) {
+    return next(new ErrorResponse("Không tìm thấy thông tin khách hàng", 404));
+  }
+
+  // Kiểm tra xem customer đã đánh giá sách này chưa
+  const existingReviewIndex = book.reviews.findIndex(
+    (r) => r.customer.toString() === customer._id.toString()
+  );
+
+  if (existingReviewIndex !== -1) {
+    // Cập nhật đánh giá đã tồn tại
+    book.reviews[existingReviewIndex].rating = ratingNumber;
+    book.reviews[existingReviewIndex].review = review || "";
+    book.reviews[existingReviewIndex].createdAt = Date.now();
+  } else {
+    // Thêm đánh giá mới
+    book.reviews.push({
+      customer: customer._id,
+      rating: ratingNumber,
+      review: review || "",
+    });
+  }
+
+  // Tính toán lại averageRating
+  if (book.reviews.length > 0) {
+    const totalRating = book.reviews.reduce((sum, r) => sum + r.rating, 0);
+    book.averageRating = Number((totalRating / book.reviews.length).toFixed(2));
+  } else {
+    book.averageRating = 0;
+  }
+
+  await book.save();
+
+  // Populate customer info trong response
+  await book.populate("reviews.customer", "fullName email");
+
+  res.status(200).json({
+    success: true,
+    message: existingReviewIndex !== -1 ? "Đã cập nhật đánh giá thành công" : "Đã thêm đánh giá thành công",
+    data: book,
+  });
+});

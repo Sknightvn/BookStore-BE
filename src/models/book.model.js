@@ -53,6 +53,35 @@ const bookSchema = new mongoose.Schema({
     type: String, 
     default: null,
   },
+  reviews: [
+    {
+      customer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Customer",
+        required: true,
+      },
+      rating: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 5,
+      },
+      review: {
+        type: String,
+        default: "",
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
+  averageRating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5,
+  },
   isDelete: {
     type: Boolean,
     default: false,
