@@ -190,7 +190,7 @@ exports.updateAddress = async (req, res) => {
 
 
 // ======================
-// XÓA ĐỊA CHỈ (SOFT DELETE)
+// XÓA ĐỊA CHỈ (HARD DELETE)
 // ======================
 exports.softDeleteAddress = async (req, res) => {
   try {
@@ -202,10 +202,11 @@ exports.softDeleteAddress = async (req, res) => {
     if (index < 0 || index >= customer.address.length)
       return res.status(400).json({ success: false, message: "Index không hợp lệ" })
 
-    customer.address[index].isDeleted = true
+    // Xóa thật địa chỉ khỏi array
+    customer.address.splice(index, 1)
     await customer.save()
 
-    res.status(200).json({ success: true, message: "Đã ẩn địa chỉ", addresses: customer.address })
+    res.status(200).json({ success: true, message: "Đã xóa địa chỉ", addresses: customer.address })
   } catch (error) {
     console.error(error)
     res.status(500).json({ success: false, message: "Lỗi server", error: error.message })
